@@ -2,19 +2,55 @@ import React, { useState, useEffect } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 
+
+function taken(id) {
+  fetch('/api/remove', {
+    method: 'POST',
+    body: JSON.stringify({data : id}),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network error');
+    }
+    return response.json();
+  })
+  .then(() => {
+    window.location.reload();
+  })
+  .catch(error => {
+    console.error('fetch failed:', error);
+  });
+}
+
 function Submit() {
   const [inputValue, setInputValue] = useState("");
 
   function search(formData) {
     const query = formData.get("query");
 
-    fetch('/api/postExample', {
+    fetch('/api/retreave', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ data: query }),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network error');
+      }
+      return response.json();
+    })
+    .then(() => {
+      window.location.reload();
+    })
+    .catch(error => {
+      console.error('fetch failed:', error);
     });
+;
 
     // Clear the input field
     setInputValue("");
@@ -29,6 +65,8 @@ function Submit() {
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
   }
+
+  
 
   return (
     <form onSubmit={handleSubmit}>
@@ -82,6 +120,7 @@ function App() {
               <tr>
                 <th>id</th>
                 <th>product</th>
+                <th>check</th>
               </tr>
             </thead>
             <tbody>
@@ -89,6 +128,7 @@ function App() {
                 <tr key={row.id}>
                   <td>{row.id}</td>
                   <td>{row.product}</td>
+                  <td><button onClick={() => {taken(row.id);}}>Picked</button></td>
                 </tr>
               ))}
             </tbody>

@@ -58,7 +58,7 @@ app.get('/tableData', (req, res) => {
     });
 });
 
-app.post('/api/postExample', (req, res) => {
+app.post('/api/retreave', (req, res) => {
     const { data } = req.body;
     console.log(data);
     res.json({ message: 'Data received' });
@@ -67,6 +67,18 @@ app.post('/api/postExample', (req, res) => {
             return console.log(err.message);
         }
         console.log("successfuly added product to database");
+    });
+});
+
+app.post('/api/remove', (req, res) => {
+    const { data } = req.body;    
+    console.log(data);
+    res.json({message: 'remove command recieved'});
+    db.run(`DELETE FROM groceries WHERE id = ?`, [data], function(err) {
+        if (err) {
+            return console.log(err.message);
+        }
+        console.log("Successfully removed product from database");
     });
 });
 
