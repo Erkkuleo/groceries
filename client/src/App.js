@@ -80,15 +80,9 @@ function Submit() {
 
 
 function App() {
-  const [data, setData] = useState(null);
   const [tableData, setTableData] = useState(null);
 
   useEffect(() => {
-    // Fetching initial data
-    fetch("/api")
-      .then((res) => res.json())
-      .then((data) => setData(data.message))
-      .catch((error) => console.error(error));
 
     // Fetching table data
     fetch("/tableData")
