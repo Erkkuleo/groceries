@@ -55,4 +55,7 @@ input {
   }
 }
 
+table {
+  border-spacing: 10px;
+}
 

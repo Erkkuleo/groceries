@@ -76,9 +76,6 @@ function Submit() {
 }
 
 
-
-
-
 function App() {
   const [tableData, setTableData] = useState(null);
 
