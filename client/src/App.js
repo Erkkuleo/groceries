@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
-
+/*
+This function will remove the item from the shoppinglist.
+It makes a post request to the backend where the item 
+with the spesific id gets deleted.
+*/
 function taken(id) {
   fetch('/api/remove', {
     method: 'POST',
@@ -24,6 +28,10 @@ function taken(id) {
   });
 }
 
+/*
+This fiction adds the wanted products to the database by 
+making a post request where the formData will be send. 
+*/
 function Submit() {
   const [inputValue, setInputValue] = useState("");
 
@@ -49,9 +57,6 @@ function Submit() {
     .catch(error => {
       console.error('fetch failed:', error);
     });
-;
-
-    // Clear the input field
     setInputValue("");
   }
 
@@ -64,8 +69,6 @@ function Submit() {
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
   }
-
-  
 
   return (
     <form onSubmit={handleSubmit}>
@@ -80,8 +83,7 @@ function App() {
   const [tableData, setTableData] = useState(null);
 
   useEffect(() => {
-
-    // Fetching table data
+    // fetches sql database data from backend.
     fetch("/tableData")
       .then((res) => {
         if (!res.ok) {
