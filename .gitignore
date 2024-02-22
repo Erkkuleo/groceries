@@ -131,3 +131,4 @@ dist
 node_modules
 # database
 ./server/groceries.db
+./server/groceries.db
