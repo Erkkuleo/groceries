@@ -73,7 +73,7 @@ function Submit() {
   return (
     <form onSubmit={handleSubmit}>
       <input name="query" value={inputValue} onChange={handleInputChange} />
-      <button type="submit">Submit</button>
+      <button type="submit">lähetä</button>
     </form>
   );
 }
@@ -110,8 +110,8 @@ function App() {
             <thead>
               <tr>
                 <th>id</th>
-                <th>product</th>
-                <th>check</th>
+                <th>tuote</th>
+                <th>kerätty?</th>
               </tr>
             </thead>
             <tbody>
@@ -119,13 +119,13 @@ function App() {
                 <tr key={row.id}>
                   <td>{row.id}</td>
                   <td>{row.product}</td>
-                  <td><button onClick={() => {taken(row.id);}}>Picked</button></td>
+                  <td><button onClick={() => {taken(row.id);}}>otettu</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <p>Loading table data...</p>
+          <p>ladataan dataa...</p>
         )}
       </header>
     </div>
