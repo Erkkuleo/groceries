@@ -1,8 +1,31 @@
 const path = require('path');
 const express = require('express');
 
+const cors = require('cors');
 const PORT = process.env.PORT || 3001;
+
 const app = express();
+const  http = require('http').Server(app);
+
+app.use(cors());
+
+const io = require('socket.io')(http, {
+    cors: {
+        origin: "http://localhost:3000"
+    }
+});
+
+io.on('connection', (socket) => {
+    console.log(`⚡: ${socket.id} user just connected!`);
+    
+    socket.on("aProductWasTakenOrAdded", () => {
+        socket.broadcast.emit("update");
+    });
+
+    socket.on('disconnect', () => {
+      console.log('🔥: A user disconnected');
+    });
+  });
 
 const sqlite3 = require('sqlite3').verbose();
 
@@ -82,7 +105,7 @@ app.post('/api/remove', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
+http.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
 });
 

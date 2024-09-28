@@ -1,12 +1,31 @@
 import React, { useState, useEffect } from "react";
+//import { BrowserRouter as Router, Routes, Route, Link } from "react-router";
+
 import "./App.css";
+import login from "./pages/login";
+
+import socketIO from 'socket.io-client';
+
+
+const socket = socketIO.connect('http://localhost:3001');
+
+//this function fetches the table data from the database
+const fetchTableData = async(setTableData) => {
+  const result = await fetch("/tableData");
+  if (!result.ok) {
+    throw new Error("failed to fetch data");
+  }
+  const data = await result.json();
+  setTableData(data);
+};
+
 
 /*
 This function will remove the item from the shoppinglist.
 It makes a post request to the backend where the item 
 with the spesific id gets deleted.
 */
-function taken(id) {
+function taken(id, setTableData) {
   fetch('/api/remove', {
     method: 'POST',
     body: JSON.stringify({data : id}),
@@ -21,7 +40,10 @@ function taken(id) {
     return response.json();
   })
   .then(() => {
-    window.location.reload();
+    fetchTableData(setTableData);
+  })
+  .then(() => {
+    socket.emit("aProductWasTakenOrAdded");
   })
   .catch(error => {
     console.error('fetch failed:', error);
@@ -32,7 +54,7 @@ function taken(id) {
 This fiction adds the wanted products to the database by 
 making a post request where the formData will be send. 
 */
-function Submit() {
+function Submit({setTableData}) {
   const [inputValue, setInputValue] = useState("");
 
   function search(formData) {
@@ -50,9 +72,15 @@ function Submit() {
         throw new Error('Network error');
       }
       return response.json();
+    })  
+    .then(() => {
+      socket.emit('hello', 'world');
     })
     .then(() => {
-      window.location.reload();
+      fetchTableData(setTableData);
+    })
+    .then(() => {
+      socket.emit("aProductWasTakenOrAdded")
     })
     .catch(error => {
       console.error('fetch failed:', error);
@@ -80,30 +108,31 @@ function Submit() {
 
 
 function App() {
+  socket.on("connect", () => {
+    console.log(socket.id);
+  });  
+
   const [tableData, setTableData] = useState(null);
+
+
 
   useEffect(() => {
     // fetches sql database data from backend.
-    fetch("/tableData")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to fetch table data");
-        }
-        return res.json();
-      })
-      .then((res) => {
-        console.log("Table Data:", res);
-        setTableData(res);
-      })
-      .catch((error) => console.error(error));
+      fetchTableData(setTableData);
+
+      socket.on("update", () => {
+        fetchTableData(setTableData);
+      });
+
   }, []);
 
   return (
+    //<Router>
     <div className="App">
       <header className="App-header">
         <h1>Lahnan <br></br>kauppalista</h1>
         <h1>
-          <Submit/>
+          <Submit setTableData={setTableData}/>
         </h1>
         {tableData !== null ? ( // Check for non-null or undefined
           <table>
@@ -119,7 +148,7 @@ function App() {
                 <tr key={row.id}>
                   <td>{row.id}</td>
                   <td>{row.product}</td>
-                  <td><button onClick={() => {taken(row.id);}}>otettu</button></td>
+                  <td><button onClick={() => {taken(row.id, setTableData);}}>otettu</button></td>
                 </tr>
               ))}
             </tbody>
@@ -128,7 +157,9 @@ function App() {
           <p>ladataan dataa...</p>
         )}
       </header>
+
     </div>
+    //</Router>
   );
 }
 export default App;
