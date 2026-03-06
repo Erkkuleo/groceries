@@ -1,77 +1,64 @@
-const path = require('path');
 const express = require('express');
-
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const http = require('http');
+const sqlite3 = require('sqlite3').verbose();
+
 const PORT = process.env.PORT || 3001;
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
 const app = express();
-const  http = require('http').Server(app);
+const server = http.Server(app);
 
-app.use(cors());
+app.use(helmet());
+app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(express.json());
 
-const io = require('socket.io')(http, {
-    cors: {
-        origin: "http://localhost:3000"
-    }
+const readLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
+const writeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30 });
+
+const io = require('socket.io')(server, {
+    cors: { origin: CLIENT_ORIGIN }
 });
 
 io.on('connection', (socket) => {
-    console.log(`⚡: ${socket.id} user just connected!`);
-    
-    socket.on("aProductWasTakenOrAdded", () => {
-        socket.broadcast.emit("update");
+    console.log(`connected: ${socket.id}`);
+
+    socket.on('aProductWasTakenOrAdded', () => {
+        socket.broadcast.emit('update');
     });
 
     socket.on('disconnect', () => {
-      console.log('🔥: A user disconnected');
+        console.log('disconnected:', socket.id);
     });
-  });
+});
 
-const sqlite3 = require('sqlite3').verbose();
+const DB_PATH = process.env.DB_PATH || 'groceries.db';
 
-app.use(express.json());
-
-let db = new sqlite3.Database('groceries.db', (err) => {
+const db = new sqlite3.Database(DB_PATH, (err) => {
     if (err) {
         return console.error(err.message);
     }
-    console.log("Connected to database");
-});
-/*
-db.run('INSERT INTO groceries(id, product) VALUES (2, \'kauramaito\')', [], function(err) {
-    if (err) {
-        return console.log(err.message);
-    }
-    console.log(`A row has been inserted ${this.lastID}`);
-});
-*/
-
-let selectSql = `SELECT Id id,
-Product product
-FROM groceries`;
-
-let table = [];
-db.each(selectSql, [], function(err, row) {
-if(err) {
-console.log(err.message);
-}  
-table.push({id: row.id, product: row.product});
+    console.log('Connected to database');
+    db.run(`CREATE TABLE IF NOT EXISTS groceries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product TEXT NOT NULL
+    )`, (err) => {
+        if (err) console.error('Failed to create table:', err.message);
+    });
 });
 
-
-app.use(express.static(path.resolve(__dirname, '~/Documents/omat/node/client/build')));
-
-app.get('/api', (req, res) => {
-    res.json({ message : "moi"});
+app.get('/api', readLimiter, (req, res) => {
+    res.json({ message: 'moi' });
 });
 
-app.get('/tableData', (req, res) => {
-    let selectSql = `SELECT ID id, Product product FROM groceries;`;
-
-    let table = [];
-    db.each(selectSql, [], (err, row) => {
+app.get('/tableData', readLimiter, (req, res) => {
+    const sql = `SELECT ID id, Product product FROM groceries;`;
+    const table = [];
+    db.each(sql, [], (err, row) => {
         if (err) {
-            console.log(err.message);
+            console.error(err.message);
             res.status(500).json({ error: 'Internal Server Error' });
             return;
         }
@@ -81,31 +68,34 @@ app.get('/tableData', (req, res) => {
     });
 });
 
-app.post('/api/retreave', (req, res) => {
+app.post('/api/retrieve', writeLimiter, (req, res) => {
     const { data } = req.body;
-    console.log(data);
-    res.json({ message: 'Data received' });
-    db.run(`INSERT INTO groceries(product) VALUES (\'${data}\')`, [], function(err) {
+    if (!data || typeof data !== 'string' || data.trim().length === 0 || data.length > 200) {
+        return res.status(400).json({ error: 'Invalid input' });
+    }
+    db.run(`INSERT INTO groceries(product) VALUES (?)`, [data], function(err) {
         if (err) {
-            return console.log(err.message);
+            console.error(err.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
-        console.log("successfuly added product to database");
+        res.json({ message: 'Data received' });
     });
 });
 
-app.post('/api/remove', (req, res) => {
-    const { data } = req.body;    
-    console.log(data);
-    res.json({message: 'remove command recieved'});
+app.post('/api/remove', writeLimiter, (req, res) => {
+    const { data } = req.body;
+    if (!Number.isInteger(data) || data <= 0) {
+        return res.status(400).json({ error: 'Invalid input' });
+    }
     db.run(`DELETE FROM groceries WHERE id = ?`, [data], function(err) {
         if (err) {
-            return console.log(err.message);
+            console.error(err.message);
+            return res.status(500).json({ error: 'Internal Server Error' });
         }
-        console.log("Successfully removed product from database");
+        res.json({ message: 'remove command received' });
     });
 });
 
-http.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
 });
-

@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./server
+    environment:
+      PORT: "3001"
+      CLIENT_ORIGIN: "http://localhost:8080"
+      DB_PATH: "/data/groceries.db"
+    volumes:
+      - groceries-data:/data
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build: ./client
+    environment:
+      BACKEND_URL: "http://backend:3001"
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  groceries-data:

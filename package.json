@@ -1,24 +1,19 @@
 {
-  "name": "node",
+  "name": "groceries",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server/index.js",
-    "build": "cd client && npm install && npm run build"
+    "dev": "nodemon server/index.js",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm install && npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^5.0.0",
-    "nodemon": "^3.1.7",
-    "react-router-dom": "^6.26.2",
-    "socket.io": "^4.7.5",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7",
-    "ws": "^8.18.0"
+  "devDependencies": {
+    "nodemon": "^3.1.7"
   }
 }
