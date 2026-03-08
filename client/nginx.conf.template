@@ -14,6 +14,8 @@ server {
         proxy_set_header Host $proxy_host;
         proxy_cache_bypass $http_upgrade;
         proxy_ssl_server_name on;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
     }
 
     # Proxy REST API
