@@ -1,33 +1,35 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Login() {
+function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const res = await fetch('/api/auth/login', {
+    setSuccess('');
+    const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
     if (res.ok) {
-      const { token } = await res.json();
-      localStorage.setItem('token', token);
-      navigate('/');
+      setSuccess('Tili luotu! Voit nyt kirjautua sisään.');
+      setTimeout(() => navigate('/login'), 1500);
     } else {
-      setError('Invalid username or password');
+      const body = await res.json();
+      setError(body.error || 'Rekisteröinti epäonnistui');
     }
   };
 
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Kirjaudu sisään</h1>
+        <h1>Luo tili</h1>
         <form onSubmit={handleSubmit}>
           <input
             type="text"
@@ -38,20 +40,21 @@ function Login() {
           />
           <input
             type="password"
-            placeholder="salasana"
+            placeholder="salasana (min. 8 merkkiä)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button type="submit">Kirjaudu</button>
+          <button type="submit">Rekisteröidy</button>
         </form>
         {error && <p style={{ color: 'red' }}>{error}</p>}
+        {success && <p style={{ color: 'green' }}>{success}</p>}
         <p>
-          <a href="/register" style={{ color: 'inherit' }}>Luo tili</a>
+          <a href="/login" style={{ color: 'inherit' }}>Kirjaudu sisään</a>
         </p>
       </header>
     </div>
   );
 }
 
-export default Login;
+export default Register;

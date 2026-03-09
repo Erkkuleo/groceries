@@ -84,6 +84,24 @@ app.get('/api', readLimiter, (req, res) => {
     res.json({ message: 'moi' });
 });
 
+app.post('/api/auth/register', writeLimiter, (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password || username.length > 50 || password.length < 8) {
+        return res.status(400).json({ error: 'Invalid input' });
+    }
+    bcrypt.hash(password, 10, (err, hash) => {
+        if (err) return res.status(500).json({ error: 'Internal Server Error' });
+        db.run(`INSERT INTO users (username, password_hash) VALUES (?, ?)`, [username, hash], function(err) {
+            if (err) return res.status(409).json({ error: 'Username already taken' });
+            const userId = this.lastID;
+            db.run(`INSERT INTO lists (owner_id) VALUES (?)`, [userId], function(err) {
+                if (err) return res.status(500).json({ error: 'Internal Server Error' });
+                res.json({ message: 'User created' });
+            });
+        });
+    });
+});
+
 app.post('/api/auth/login', writeLimiter, (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
