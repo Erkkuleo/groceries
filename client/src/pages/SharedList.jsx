@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import socketIO from 'socket.io-client';
+import '../App.css';
 
 const socket = socketIO.connect('/');
 
@@ -43,16 +44,20 @@ function SharedList() {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Lahnan <br />kauppalista</h1>
-        <form onSubmit={handleAdd}>
-          <input value={inputValue} onChange={(e) => setInputValue(e.target.value)} required />
+    <div className="app">
+      <nav className="app-navbar">
+        <h1 className="app-title">Lahnan kauppalista</h1>
+      </nav>
+      <main className="app-content">
+        <form className="add-form" onSubmit={handleAdd}>
+          <input value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="lisää tuote..." required />
           <button type="submit">lähetä</button>
         </form>
         {tableData !== null ? (
           <table>
-            <thead><tr><th>id</th><th>tuote</th><th>kerätty?</th></tr></thead>
+            <thead>
+              <tr><th>id</th><th>tuote</th><th>kerätty?</th></tr>
+            </thead>
             <tbody>
               {tableData.map((row) => (
                 <tr key={row.id}>
@@ -66,7 +71,7 @@ function SharedList() {
         ) : (
           <p>ladataan dataa...</p>
         )}
-      </header>
+      </main>
     </div>
   );
 }

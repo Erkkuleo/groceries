@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../App.css';
 
 function Register() {
   const [username, setUsername] = useState('');
@@ -27,10 +28,13 @@ function Register() {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Luo tili</h1>
-        <form onSubmit={handleSubmit}>
+    <div className="app">
+      <nav className="app-navbar">
+        <h1 className="app-title">Lahnan kauppalista</h1>
+      </nav>
+      <main className="app-content">
+        <h2>Luo tili</h2>
+        <form className="auth-form" onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="käyttäjänimi"
@@ -47,12 +51,10 @@ function Register() {
           />
           <button type="submit">Rekisteröidy</button>
         </form>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {success && <p style={{ color: 'green' }}>{success}</p>}
-        <p>
-          <a href="/login" style={{ color: 'inherit' }}>Kirjaudu sisään</a>
-        </p>
-      </header>
+        {error && <p className="auth-error">{error}</p>}
+        {success && <p className="auth-success">{success}</p>}
+        <a href="/login" className="auth-link">Kirjaudu sisään</a>
+      </main>
     </div>
   );
 }

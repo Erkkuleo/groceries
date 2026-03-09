@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../App.css';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -20,15 +21,18 @@ function Login() {
       localStorage.setItem('token', token);
       navigate('/');
     } else {
-      setError('Invalid username or password');
+      setError('Väärä käyttäjänimi tai salasana');
     }
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Kirjaudu sisään</h1>
-        <form onSubmit={handleSubmit}>
+    <div className="app">
+      <nav className="app-navbar">
+        <h1 className="app-title">Lahnan kauppalista</h1>
+      </nav>
+      <main className="app-content">
+        <h2>Kirjaudu sisään</h2>
+        <form className="auth-form" onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="käyttäjänimi"
@@ -45,11 +49,9 @@ function Login() {
           />
           <button type="submit">Kirjaudu</button>
         </form>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <p>
-          <a href="/register" style={{ color: 'inherit' }}>Luo tili</a>
-        </p>
-      </header>
+        {error && <p className="auth-error">{error}</p>}
+        <a href="/register" className="auth-link">Luo tili</a>
+      </main>
     </div>
   );
 }

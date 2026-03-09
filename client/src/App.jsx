@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import { useNavigate } from 'react-router-dom';
 import socketIO from 'socket.io-client';
@@ -54,8 +54,8 @@ function Submit({ setTableData, navigate }) {
   }
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); search(new FormData(e.target)); }}>
-      <input name="query" value={inputValue} onChange={(e) => setInputValue(e.target.value)} required />
+    <form className="add-form" onSubmit={(e) => { e.preventDefault(); search(new FormData(e.target)); }}>
+      <input name="query" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="lisää tuote..." required />
       <button type="submit">lähetä</button>
     </form>
   );
@@ -89,16 +89,26 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Lahnan <br />kauppalista</h1>
-        <h1><Submit setTableData={setTableData} navigate={navigate} /></h1>
-        <button onClick={handleShare}>Jaa lista</button>
-        {shareUrl && <p style={{ fontSize: '0.8em', wordBreak: 'break-all' }}>{shareUrl}</p>}
-        <button onClick={handleLogout}>Kirjaudu ulos</button>
+    <div className="app">
+      <nav className="app-navbar">
+        <h1 className="app-title">Kauppalista</h1>
+        <div className="app-navbar-actions">
+          <button onClick={handleShare}>Jaa lista</button>
+          <button onClick={handleLogout}>Kirjaudu ulos</button>
+        </div>
+      </nav>
+      {shareUrl && (
+        <div className="share-banner">
+          Linkki kopioitu: <span>{shareUrl}</span>
+        </div>
+      )}
+      <main className="app-content">
+        <Submit setTableData={setTableData} navigate={navigate} />
         {tableData !== null ? (
           <table>
-            <thead><tr><th>id</th><th>tuote</th><th>kerätty?</th></tr></thead>
+            <thead>
+              <tr><th>id</th><th>tuote</th><th>kerätty?</th></tr>
+            </thead>
             <tbody>
               {tableData.map((row) => (
                 <tr key={row.id}>
@@ -112,7 +122,7 @@ function App() {
         ) : (
           <p>ladataan dataa...</p>
         )}
-      </header>
+      </main>
     </div>
   );
 }
