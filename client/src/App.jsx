@@ -1,91 +1,61 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
+import { useNavigate } from 'react-router-dom';
 import socketIO from 'socket.io-client';
 
 const socket = socketIO.connect('/');
+socket.on("connect", () => { console.log(socket.id); });
 
-socket.on("connect", () => {
-  console.log(socket.id);
-});
-
-const fetchTableData = async (setTableData) => {
-  const result = await fetch("/tableData");
-  if (!result.ok) {
-    throw new Error("failed to fetch data");
-  }
-  const data = await result.json();
-  setTableData(data);
-};
-
-function taken(id, setTableData) {
-  fetch('/api/remove', {
-    method: 'POST',
-    body: JSON.stringify({ data: id }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Network error');
-    }
-    return response.json();
-  })
-  .then(() => {
-    fetchTableData(setTableData);
-  })
-  .then(() => {
-    socket.emit("aProductWasTakenOrAdded");
-  })
-  .catch(error => {
-    console.error('fetch failed:', error);
-  });
+function getToken() {
+  return localStorage.getItem('token');
 }
 
-function Submit({ setTableData }) {
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${getToken()}`,
+  };
+}
+
+const fetchTableData = async (setTableData, navigate) => {
+  const result = await fetch("/tableData", { headers: authHeaders() });
+  if (result.status === 401) { navigate('/login'); return; }
+  if (!result.ok) throw new Error("failed to fetch data");
+  setTableData(await result.json());
+};
+
+function taken(id, setTableData, navigate) {
+  fetch('/api/remove', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ data: id }),
+  })
+  .then(res => { if (!res.ok) throw new Error('Network error'); return res.json(); })
+  .then(() => fetchTableData(setTableData, navigate))
+  .then(() => socket.emit("aProductWasTakenOrAdded"))
+  .catch(err => console.error('fetch failed:', err));
+}
+
+function Submit({ setTableData, navigate }) {
   const [inputValue, setInputValue] = useState("");
 
   function search(formData) {
     const query = formData.get("query");
-
     fetch('/api/retrieve', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: authHeaders(),
       body: JSON.stringify({ data: query }),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network error');
-      }
-      return response.json();
-    })
-    .then(() => {
-      fetchTableData(setTableData);
-    })
-    .then(() => {
-      socket.emit("aProductWasTakenOrAdded");
-    })
-    .catch(error => {
-      console.error('fetch failed:', error);
-    });
+    .then(res => { if (!res.ok) throw new Error('Network error'); return res.json(); })
+    .then(() => fetchTableData(setTableData, navigate))
+    .then(() => socket.emit("aProductWasTakenOrAdded"))
+    .catch(err => console.error('fetch failed:', err));
     setInputValue("");
   }
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    search(formData);
-  };
-
-  const handleInputChange = (event) => {
-    setInputValue(event.target.value);
-  };
-
   return (
-    <form onSubmit={handleSubmit}>
-      <input name="query" value={inputValue} onChange={handleInputChange} required />
+    <form onSubmit={(e) => { e.preventDefault(); search(new FormData(e.target)); }}>
+      <input name="query" value={inputValue} onChange={(e) => setInputValue(e.target.value)} required />
       <button type="submit">lähetä</button>
     </form>
   );
@@ -93,41 +63,48 @@ function Submit({ setTableData }) {
 
 function App() {
   const [tableData, setTableData] = useState(null);
+  const [shareUrl, setShareUrl] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchTableData(setTableData);
+    if (!getToken()) { navigate('/login'); return; }
+    fetchTableData(setTableData, navigate);
+    socket.on("update", () => fetchTableData(setTableData, navigate));
+    return () => { socket.off("update"); };
+  }, [navigate]);
 
-    socket.on("update", () => {
-      fetchTableData(setTableData);
-    });
+  const handleShare = async () => {
+    const res = await fetch('/api/list/share', { method: 'POST', headers: authHeaders() });
+    if (res.ok) {
+      const { token } = await res.json();
+      const url = `${window.location.origin}/list/${token}`;
+      setShareUrl(url);
+      navigator.clipboard.writeText(url).catch(() => {});
+    }
+  };
 
-    return () => {
-      socket.off("update");
-    };
-  }, []);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   return (
     <div className="App">
       <header className="App-header">
         <h1>Lahnan <br />kauppalista</h1>
-        <h1>
-          <Submit setTableData={setTableData} />
-        </h1>
+        <h1><Submit setTableData={setTableData} navigate={navigate} /></h1>
+        <button onClick={handleShare}>Jaa lista</button>
+        {shareUrl && <p style={{ fontSize: '0.8em', wordBreak: 'break-all' }}>{shareUrl}</p>}
+        <button onClick={handleLogout}>Kirjaudu ulos</button>
         {tableData !== null ? (
           <table>
-            <thead>
-              <tr>
-                <th>id</th>
-                <th>tuote</th>
-                <th>kerätty?</th>
-              </tr>
-            </thead>
+            <thead><tr><th>id</th><th>tuote</th><th>kerätty?</th></tr></thead>
             <tbody>
               {tableData.map((row) => (
                 <tr key={row.id}>
                   <td>{row.id}</td>
                   <td>{row.product}</td>
-                  <td><button onClick={() => { taken(row.id, setTableData); }}>otettu</button></td>
+                  <td><button onClick={() => taken(row.id, setTableData, navigate)}>otettu</button></td>
                 </tr>
               ))}
             </tbody>
